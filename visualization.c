@@ -9,22 +9,36 @@
 #include "texture-buffer.h"
 #include "gradient.h"
 
-static int            *argc             = NULL;
-static char         ***argv             = NULL;
-static gint            bands            = -1;
-static ClutterActor   *stage            = NULL;
-static TextureBuffer  *buf              = NULL;
-static ClutterContent *image            = NULL;
-static gint            current_x_pos    = 0;
-static QuitCallback    quit_callback    = NULL;
-static Gradient       *gradient         = NULL;
+#define WIDTH  1000
+#define HEIGHT  500
 
-const guint WIDTH = 1000;
-const guint HEIGHT = 500;
+static int             *argc             = NULL;
+static char          ***argv             = NULL;
+static gint             bands            = -1;
+static ClutterActor    *stage            = NULL;
+static TextureBuffer   *buf              = NULL;
+static ClutterContent  *image            = NULL;
+static ClutterActor    *renderer1        = NULL;
+static ClutterActor    *renderer2        = NULL;
+static gint             current_x_pos    = WIDTH - 1;
+static QuitCallback     quit_callback    = NULL;
+static Gradient        *gradient         = NULL;
 
 static GError *error = NULL;
 
-gboolean
+static void
+advance_or_wrap (ClutterActor *renderer)
+{
+  float x, y;
+  clutter_actor_get_position (renderer, &x, &y);
+
+  if (x < WIDTH - 1)
+    clutter_actor_set_position (renderer, x + 1, y);
+  else
+    clutter_actor_set_position (renderer, -WIDTH, y);
+}
+
+static gboolean
 process_pixel_cols (gpointer data)
 {
   TextureBuffer *pixel_col = (TextureBuffer*) data;
@@ -42,9 +56,14 @@ process_pixel_cols (gpointer data)
                           &rect, 0, &error);
   g_assert (ret);
 
-  current_x_pos += 1;
-  if (current_x_pos >= WIDTH)
-    current_x_pos = 0;
+  /* Advance the renderers one pixel to the right, wrapping around if
+   * needed. */
+  advance_or_wrap (renderer1);
+  advance_or_wrap (renderer2);
+
+  current_x_pos -= 1;
+  if (current_x_pos < 0)
+    current_x_pos = WIDTH - 1;
 
   return G_SOURCE_REMOVE;
 }
@@ -77,21 +96,30 @@ visualization_thread_fun (gpointer data)
   g_signal_connect (stage, "delete-event", (GCallback) window_closed, NULL);
   clutter_actor_show (stage);
 
-  image = clutter_image_new ();
+  /* The heatmap is painted in this texture. */
   buf = texture_buffer_new (WIDTH, bands);
   texture_buffer_fill (buf, 0, 0, 0);
+  image = clutter_image_new ();
   clutter_image_set_data (CLUTTER_IMAGE (image),
                           buf->data,
                           COGL_PIXEL_FORMAT_RGBA_8888,
                           WIDTH, HEIGHT, 0, &error);
 
-  /* renderer is destroyed with Stage */
-  ClutterActor *renderer = clutter_actor_new ();
-  clutter_actor_set_content (renderer, image);
-  clutter_actor_set_position (renderer, 0, 0);
-  clutter_actor_set_size (renderer, WIDTH, HEIGHT);
+  /* There are two renderer actors positioned contiguously.
+   * They move one pixel to the right as the spectrum advances and then wrap
+   * around. */
+  renderer1 = clutter_actor_new ();
+  clutter_actor_set_content (renderer1, image);
+  clutter_actor_set_position (renderer1, -WIDTH, 0);
+  clutter_actor_set_size (renderer1, WIDTH, HEIGHT);
 
-  clutter_actor_add_child (stage, renderer);
+  renderer2 = clutter_actor_new ();
+  clutter_actor_set_content (renderer2, image);
+  clutter_actor_set_position (renderer2, 0, 0);
+  clutter_actor_set_size (renderer2, WIDTH, HEIGHT);
+
+  clutter_actor_add_child (stage, renderer1);
+  clutter_actor_add_child (stage, renderer2);
 
   /* This gradient is used to generate heatmap colors. */
   gradient = gradient_new (5,
