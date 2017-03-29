@@ -174,6 +174,7 @@ gradient_new (int count_stops, ...)
   Gradient *gradient = g_object_new (ANALYZER_TYPE_GRADIENT,
                                      "color_stops", color_stops,
                                      NULL);
+  return gradient;
 }
 
 static float

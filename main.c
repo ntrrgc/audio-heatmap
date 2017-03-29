@@ -46,20 +46,16 @@ message_handler (GstBus * bus, GstMessage * message, gpointer data)
 
     if (strcmp (name, "spectrum") == 0) {
       const GValue *magnitudes;
-      const GValue *phases;
       const GValue *mag;
-      gdouble freq;
       guint i;
 
       if (!gst_structure_get_clock_time (s, "endtime", &endtime))
         endtime = GST_CLOCK_TIME_NONE;
 
       magnitudes = gst_structure_get_value (s, "magnitude");
-      phases = gst_structure_get_value (s, "phase");
       static double mags[spect_bands];
 
       for (i = 0; i < spect_bands; ++i) {
-//        freq = (gdouble) ((sampling_freq / 2) * i + sampling_freq / 4) / spect_bands;
         mag = gst_value_list_get_value (magnitudes, i);
         mags[i] = (double) g_value_get_float(mag);
       }

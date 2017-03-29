@@ -75,6 +75,7 @@ window_closed (ClutterStage *stage,
 {
   clutter_main_quit ();
   quit_callback ();
+  return TRUE;
 }
 
 static gpointer

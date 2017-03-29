@@ -11,6 +11,8 @@ add_executable(${PROJECT_NAME}
     "gradient.c"
     )
 
+add_definitions(-Wall -pedantic)
+
 find_package(PkgConfig REQUIRED)
 
 pkg_search_module (CLUTTER REQUIRED clutter-1.0)
