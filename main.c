@@ -26,7 +26,7 @@
 #include <unistd.h>
 
 #define sampling_freq 8000
-#define spect_bands 500
+#define spect_bands 600
 static GMainLoop *loop;
 
 static void

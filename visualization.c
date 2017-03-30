@@ -10,8 +10,10 @@
 #include "gradient.h"
 
 #define WIDTH  1000
-#define HEIGHT  500
+#define TEXTURE_HEIGHT  600
+#define WINDOW_HEIGHT   600
 
+static gboolean         use_log_scale_distortion = TRUE;
 static int             *argc             = NULL;
 static char          ***argv             = NULL;
 static gint             bands            = -1;
@@ -25,6 +27,17 @@ static QuitCallback     quit_callback    = NULL;
 static Gradient        *gradient         = NULL;
 
 static GError *error = NULL;
+
+static const char* FRAG_SHADER
+= "uniform sampler2D sampler0;"
+  "uniform int range;"
+  ""
+  "void main(void)"
+  "{"
+  "  float s = cogl_tex_coord_in[0].s;"
+  "  float t = cogl_tex_coord_in[0].t;"
+  "  gl_FragColor = texture2D(sampler0, vec2( s, log((range * t) / 2.0) / log(range / 2.0) ));"
+  "}";
 
 static void
 advance_or_wrap (ClutterActor *renderer)
@@ -78,6 +91,20 @@ window_closed (ClutterStage *stage,
   return TRUE;
 }
 
+static void
+renderer_apply_log_scale_shader (ClutterActor *renderer)
+{
+  ClutterEffect *effect = clutter_shader_effect_new (CLUTTER_FRAGMENT_SHADER);
+  clutter_shader_effect_set_shader_source (CLUTTER_SHADER_EFFECT (effect), FRAG_SHADER);
+
+  clutter_shader_effect_set_uniform (CLUTTER_SHADER_EFFECT (effect), "sampler0",
+                                     G_TYPE_INT, 1, 0);
+  clutter_shader_effect_set_uniform (CLUTTER_SHADER_EFFECT (effect), "range",
+                                     G_TYPE_INT, 1, TEXTURE_HEIGHT);
+
+  clutter_actor_add_effect (renderer, effect);
+}
+
 static gpointer
 visualization_thread_fun (gpointer data)
 {
@@ -92,7 +119,7 @@ visualization_thread_fun (gpointer data)
   ClutterColor stage_color = { 0, 0, 0, 255 };
 
   stage = clutter_stage_new ();
-  clutter_actor_set_size (stage, WIDTH, HEIGHT);
+  clutter_actor_set_size (stage, WIDTH, WINDOW_HEIGHT);
   clutter_actor_set_background_color (stage, &stage_color);
   g_signal_connect (stage, "delete-event", (GCallback) window_closed, NULL);
   clutter_actor_show (stage);
@@ -104,7 +131,7 @@ visualization_thread_fun (gpointer data)
   clutter_image_set_data (CLUTTER_IMAGE (image),
                           buf->data,
                           COGL_PIXEL_FORMAT_RGBA_8888,
-                          WIDTH, HEIGHT, 0, &error);
+                          WIDTH, TEXTURE_HEIGHT, 0, &error);
 
   /* There are two renderer actors positioned contiguously.
    * They move one pixel to the right as the spectrum advances and then wrap
@@ -112,12 +139,18 @@ visualization_thread_fun (gpointer data)
   renderer1 = clutter_actor_new ();
   clutter_actor_set_content (renderer1, image);
   clutter_actor_set_position (renderer1, -WIDTH, 0);
-  clutter_actor_set_size (renderer1, WIDTH, HEIGHT);
+  clutter_actor_set_size (renderer1, WIDTH, WINDOW_HEIGHT);
 
   renderer2 = clutter_actor_new ();
   clutter_actor_set_content (renderer2, image);
   clutter_actor_set_position (renderer2, 0, 0);
-  clutter_actor_set_size (renderer2, WIDTH, HEIGHT);
+  clutter_actor_set_size (renderer2, WIDTH, WINDOW_HEIGHT);
+
+  if (use_log_scale_distortion)
+    {
+      renderer_apply_log_scale_shader (renderer1);
+      renderer_apply_log_scale_shader (renderer2);
+    }
 
   clutter_actor_add_child (stage, renderer1);
   clutter_actor_add_child (stage, renderer2);
