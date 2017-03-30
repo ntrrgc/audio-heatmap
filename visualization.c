@@ -13,8 +13,8 @@
 #define TEXTURE_HEIGHT  600
 #define WINDOW_HEIGHT   600
 
-extern float            gain;
-extern gboolean         use_log_scale_distortion;
+extern const float      gain;
+extern const gboolean   use_log_scale_distortion;
 static int             *argc             = NULL;
 static char          ***argv             = NULL;
 static gint             bands            = -1;
@@ -26,8 +26,6 @@ static ClutterActor    *renderer2        = NULL;
 static gint             current_x_pos    = WIDTH - 1;
 static QuitCallback     quit_callback    = NULL;
 static Gradient        *gradient         = NULL;
-
-static GError *error = NULL;
 
 static const char* FRAG_SHADER
 = "uniform sampler2D sampler0;"
@@ -64,6 +62,7 @@ process_pixel_cols (gpointer data)
     .height = pixel_col->height,
   };
 
+  GError *error = NULL;
   gboolean ret = clutter_image_set_area (CLUTTER_IMAGE (image),
                           pixel_col->data,
                           COGL_PIXEL_FORMAT_RGBA_8888,
@@ -122,13 +121,14 @@ visualization_thread_fun (gpointer data)
   stage = clutter_stage_new ();
   clutter_actor_set_size (stage, WIDTH, WINDOW_HEIGHT);
   clutter_actor_set_background_color (stage, &stage_color);
-  g_signal_connect (stage, "delete-event", (GCallback) window_closed, NULL);
+  g_signal_connect (stage, "delete-event", G_CALLBACK(window_closed), NULL);
   clutter_actor_show (stage);
 
   /* The heatmap is painted in this texture. */
   buf = texture_buffer_new (WIDTH, bands);
   texture_buffer_fill (buf, 0, 0, 0);
   image = clutter_image_new ();
+  GError *error = NULL;
   clutter_image_set_data (CLUTTER_IMAGE (image),
                           buf->data,
                           COGL_PIXEL_FORMAT_RGBA_8888,
