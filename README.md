@@ -10,6 +10,10 @@ This little program continually generates a spectrum from a live audio source (l
 Demo
 ----
 
+[Demo video in webm](http://ntrrgc.rufian.eu/audio-heatmap-demo.webm)
+
+[Demo video in compressed h264](http://ntrrgc.rufian.eu/audio-heatmap-demo.m4v)
+
 A wave generator is useful to test how it works. Here is one that runs in the browser:
 
 * http://js.do/blog/sound-waves-with-javascript/
