@@ -122,7 +122,7 @@ visualization_thread_fun (gpointer data)
   stage = clutter_stage_new ();
   clutter_actor_set_size (stage, WIDTH, WINDOW_HEIGHT);
   clutter_actor_set_background_color (stage, &stage_color);
-  g_signal_connect (stage, "delete-event", (GCallback) window_closed, NULL);
+  g_signal_connect (stage, "delete-event", G_CALLBACK(window_closed), NULL);
   clutter_actor_show (stage);
 
   /* The heatmap is painted in this texture. */
