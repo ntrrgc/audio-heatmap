@@ -31,8 +31,8 @@
 #define min_amplitude -80
 #define max_amplitude -20
 
-gboolean use_log_scale_distortion = FALSE;
-float gain = 0.4;
+const gboolean use_log_scale_distortion = FALSE;
+const float gain = 0.4;
 
 static GMainLoop *loop;
 
