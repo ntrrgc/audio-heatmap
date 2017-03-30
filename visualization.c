@@ -13,7 +13,8 @@
 #define TEXTURE_HEIGHT  600
 #define WINDOW_HEIGHT   600
 
-static gboolean         use_log_scale_distortion = TRUE;
+extern float            gain;
+extern gboolean         use_log_scale_distortion;
 static int             *argc             = NULL;
 static char          ***argv             = NULL;
 static gint             bands            = -1;
@@ -203,7 +204,6 @@ void visualization_feed_spectrum(const double *mags,
     {
       double amp = mags[i];
 
-      float gain = 0.4;
       float intensity = fmin(1.0, gain * fmax(0.0, amp - minValue) /
                              (maxValue - minValue));
       ClutterColor color = gradient_evaluate (gradient, intensity);

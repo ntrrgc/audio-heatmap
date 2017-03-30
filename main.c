@@ -26,7 +26,14 @@
 #include <unistd.h>
 
 #define sampling_freq 8000
-#define spect_bands 600
+#define spectrum_bands 600
+#define spectrum_interval 10000000
+#define min_amplitude -80
+#define max_amplitude -20
+
+gboolean use_log_scale_distortion = FALSE;
+float gain = 0.4;
+
 static GMainLoop *loop;
 
 static void
@@ -53,14 +60,14 @@ message_handler (GstBus * bus, GstMessage * message, gpointer data)
         endtime = GST_CLOCK_TIME_NONE;
 
       magnitudes = gst_structure_get_value (s, "magnitude");
-      static double mags[spect_bands];
+      static double mags[spectrum_bands];
 
-      for (i = 0; i < spect_bands; ++i) {
+      for (i = 0; i < spectrum_bands; ++i) {
         mag = gst_value_list_get_value (magnitudes, i);
         mags[i] = (double) g_value_get_float(mag);
       }
 
-      visualization_feed_spectrum(mags, -80, -20);
+      visualization_feed_spectrum(mags, min_amplitude, max_amplitude);
     }
   } else if (message->type == GST_MESSAGE_ERROR) {
     gchar  *debug;
@@ -86,7 +93,7 @@ main (int argc, char *argv[])
   GstCaps *caps;
 
   gst_init (&argc, &argv);
-  visualization_launch(&argc, &argv, spect_bands, quit_app);
+  visualization_launch(&argc, &argv, spectrum_bands, quit_app);
 
   bin = gst_pipeline_new ("bin");
 
@@ -98,11 +105,11 @@ main (int argc, char *argv[])
 
   spectrum = gst_element_factory_make ("spectrum", "spectrum");
   g_object_set (G_OBJECT (spectrum),
-                "bands", spect_bands,
-                "threshold", -80,
+                "bands", spectrum_bands,
+                "threshold", min_amplitude,
                 "post-messages", TRUE,
                 "message-phase", TRUE,
-                "interval", 10000000,
+                "interval", spectrum_interval,
                 NULL);
 
   sink = gst_element_factory_make ("fakesink", "sink");
