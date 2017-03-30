@@ -27,8 +27,6 @@ static gint             current_x_pos    = WIDTH - 1;
 static QuitCallback     quit_callback    = NULL;
 static Gradient        *gradient         = NULL;
 
-static GError *error = NULL;
-
 static const char* FRAG_SHADER
 = "uniform sampler2D sampler0;"
   "uniform int range;"
@@ -64,6 +62,7 @@ process_pixel_cols (gpointer data)
     .height = pixel_col->height,
   };
 
+  GError *error = NULL;
   gboolean ret = clutter_image_set_area (CLUTTER_IMAGE (image),
                           pixel_col->data,
                           COGL_PIXEL_FORMAT_RGBA_8888,
@@ -129,6 +128,7 @@ visualization_thread_fun (gpointer data)
   buf = texture_buffer_new (WIDTH, bands);
   texture_buffer_fill (buf, 0, 0, 0);
   image = clutter_image_new ();
+  GError *error = NULL;
   clutter_image_set_data (CLUTTER_IMAGE (image),
                           buf->data,
                           COGL_PIXEL_FORMAT_RGBA_8888,
